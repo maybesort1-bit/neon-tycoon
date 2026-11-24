@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>НЕОН КОСМО-МАГНАТ: КОЛОНИЯ НА МАРСЕ</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg1: #090b18;
+    --bg2: #151a36;
+    --panel: rgba(18, 24, 52, 0.94);
+    --border: rgba(0, 240, 255, 0.28);
+    --cyan: #00f0ff;
+    --pink: #ff2e93;
+    --gold: #ffd166;
+    --green: #2ef2a6;
+    --purple: #9b5de5;
+    --text: #f3f6ff;
+    --muted: #95a3cf;
+  }
+
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 10%, var(--bg2), var(--bg1) 75%);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    color: var(--text);
+  }
+
+  .app {
+    width: 100%;
+    max-width: 500px;
+    height: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px;
+    gap: 8px;
+    position: relative;
+  }
+
+  /* ВЕРХНЯЯ ПАНЕЛЬ */
+  .header {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .balance-wrap {
+    display: flex;
+    flex-direction: column;
+  }
+  .balance-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .balance-val {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--gold);
+    line-height: 1.1;
+  }
+  .income-rate {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .level-badge {
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 12px;
+    text-align: center;
+  }
+  .level-badge span {
+    display: block;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .level-badge b {
+    font-size: 14px;
+    color: var(--cyan);
+  }
+
+  .pause-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  /* ВИЗУАЛЬНАЯ АРЕНА БАЗЫ */
+  .arena {
+    position: relative;
+    height: 225px;
+    min-height: 205px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: #080b16;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+  }
+  canvas#baseCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+  }
+
+  /* БЫСТРЫЕ БУСТЕРЫ НА АРЕНЕ */
+  .boost-bar {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .boost-chip {
+    pointer-events: auto;
+    background: rgba(11, 16, 36, 0.88);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .boost-chip.active {
+    border-color: var(--pink);
+    background: rgba(255, 46, 147, 0.25);
+    color: #fff;
+  }
+  .boost-chip:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  /* ВКЛАДКИ */
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .tab-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 10px 6px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(43, 127, 255, 0.2));
+    border-color: var(--cyan);
+    color: var(--text);
+  }
+
+  /* СПИСОК МОДУЛЕЙ И УЛУЧШЕНИЙ */
+  .list-wrap {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 2px;
+  }
+  .list-wrap::-webkit-scrollbar { width: 4px; }
+  .list-wrap::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.3); border-radius: 4px; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+  }
+  .card-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 16px;
+    color: #061021;
+    flex-shrink: 0;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .card-stat {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 2px;
+  }
+
+  .buy-btn {
+    background: linear-gradient(135deg, var(--cyan), #2b7fff);
+    color: #051021;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    min-width: 96px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.12s;
+  }
+  .buy-btn:active:not(:disabled) { transform: scale(0.95); }
+  .buy-btn:disabled {
+    background: rgba(255,255,255,0.08);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .buy-btn.gold {
+    background: linear-gradient(135deg, var(--gold), #ff8c00);
+  }
+
+  /* МОДАЛЬНЫЕ ОКНА */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 9, 20, 0.88);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    padding: 16px;
+  }
+  .overlay.hidden { display: none; }
+  .modal {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 22px 18px;
+    text-align: center;
+    box-shadow: 0 20px 55px rgba(0,0,0,0.7);
+  }
+  .modal-title {
+    font-size: 24px;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--cyan), #fff, var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .modal-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+  .menu-btn {
+    width: 100%;
+    padding: 13px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.08);
+    color: var(--text);
+    font-size: 15px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .menu-btn.primary {
+    background: linear-gradient(135deg, var(--cyan), #2b7fff);
+    color: #061021;
+    border: none;
+  }
+  .menu-btn.danger {
+    background: rgba(255, 46, 147, 0.2);
+    border-color: var(--pink);
+    color: #ff99cc;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ШАПКА -->
+  <div class="header">
+    <div class="balance-wrap">
+      <span class="balance-label">Кредиты колонии</span>
+      <span class="balance-val" id="moneyVal">$0</span>
+      <span class="income-rate" id="incomeVal">+$0 / сек</span>
+    </div>
+    <div class="header-right">
+      <div class="level-badge">
+        <span>Ранг базы</span>
+        <b id="rankVal">1 • Аванпост</b>
+      </div>
+      <button class="pause-btn" id="pauseBtn" title="Пауза (Esc)">II</button>
+    </div>
+  </div>
+
+  <!-- ЖИВАЯ 2D-СЦЕНА БАЗЫ НА МАРСЕ -->
+  <div class="arena">
+    <canvas id="baseCanvas" width="460" height="225"></canvas>
+    <div class="boost-bar">
+      <button class="boost-chip" id="overdriveBtn" onclick="activateOverdrive()">[2X] Форсаж реактора</button>
+      <button class="boost-chip" id="droneBtn" onclick="launchDrone()">[+] Вызов грузовика</button>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКИ -->
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="buildings" onclick="switchTab('buildings', this)">Модули базы</button>
+    <button class="tab-btn" data-tab="upgrades" onclick="switchTab('upgrades', this)">Технологии</button>
+    <button class="tab-btn" data-tab="prestige" onclick="switchTab('prestige', this)">Экспедиция</button>
+  </div>
+
+  <!-- СПИСОК -->
+  <div class="list-wrap" id="listWrap"></div>
+</div>
+
+<!-- ПРИВЕТСТВЕННОЕ / ОФФЛАЙН ОКНО -->
+<div class="overlay" id="welcomeOverlay">
+  <div class="modal">
+    <div class="modal-title">КОСМО-МАГНАТ</div>
+    <div class="modal-sub" id="welcomeText">
+      Построй крупнейшую неоновую колонию на Марсе! Тапай по главному реактору, лови метеориты с кристаллами и автоматизируй добычу.
+    </div>
+    <button class="menu-btn primary" onclick="closeWelcome()">УПРАВЛЯТЬ КОЛОНИЕЙ</button>
+  </div>
+</div>
+
+<!-- МЕНЮ ПАУЗЫ -->
+<div class="overlay hidden" id="pauseOverlay">
+  <div class="modal">
+    <div class="modal-title">ПАУЗА</div>
+    <div class="modal-sub">Симулятор космической базы (Esc)</div>
+    <button class="menu-btn primary" onclick="togglePause(false)">Продолжить игру</button>
+    <button class="menu-btn" id="soundBtn" onclick="toggleSound()">Звук: Вкл</button>
+    <button class="menu-btn danger" onclick="resetProgress()">Сбросить прогресс</button>
+  </div>
+</div>
+
+<script>
+// Инициализация Telegram WebApp (разворот на весь экран)
+if (window.Telegram && window.Telegram.WebApp) {
+  try {
+    window.Telegram.WebApp.ready();
+    window.Telegram.WebApp.expand();
+  } catch (e) {}
+}
+
+// Звуки (Web Audio API)
+const AudioFX = {
+  ctx: null,
+  enabled: true,
+  init() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  },
+  tone(freq, type = 'sine', dur = 0.1, vol = 0.12, endFreq = null) {
+    if (!this.enabled) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, this.ctx.currentTime + dur);
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + dur);
+  },
+  tap() { this.tone(420 + Math.random() * 140, 'triangle', 0.08, 0.12, 680); },
+  buy() { this.tone(520, 'sine', 0.14, 0.16, 880); },
+  meteor() { this.tone(740, 'triangle', 0.22, 0.18, 1180); },
+  boost() { this.tone(260, 'sawtooth', 0.28, 0.16, 780); }
+};
+
+// ФОРМАТИРОВАНИЕ ЧИСЕЛ
+function fmt(num) {
+  if (num < 1000) return Math.floor(num).toString();
+  const units = ['K', 'M', 'B', 'T', 'Qa', 'Qi'];
+  let u = -1;
+  let n = num;
+  while (n >= 1000 && u < units.length - 1) {
+    n /= 1000;
+    u++;
+  }
+  return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + units[u];
+}
+
+// ДАННЫЕ ИГРЫ
+const BUILDINGS_DEF = [
+  { id: 'solar', name: 'Солнечная панель', desc: 'Базовая энергия колонии', baseCost: 15, baseInc: 2, color: '#00f0ff', tag: 'ЭН' },
+  { id: 'drill', name: 'Лазерный бур', desc: 'Добыча редкой марсианской руды', baseCost: 110, baseInc: 14, color: '#ff2e93', tag: 'БР' },
+  { id: 'dome', name: 'Био-купол', desc: 'Выращивание кислорода и еды', baseCost: 750, baseInc: 85, color: '#2ef2a6', tag: 'БК' },
+  { id: 'lab', name: 'Квантовая лаборатория', desc: 'Синтез тёмной материи', baseCost: 4800, baseInc: 460, color: '#9b5de5', tag: 'КЛ' },
+  { id: 'port', name: 'Орбитальный космопорт', desc: 'Торговля с Землёй и поясом астероидов', baseCost: 32000, baseInc: 2800, color: '#ffd166', tag: 'КП' },
+  { id: 'gate', name: 'Звёздные врата', desc: 'Межгалактический телепорт ресурсов', baseCost: 220000, baseInc: 18500, color: '#ff7b00', tag: 'ЗВ' }
+];
+
+const UPGRADES_DEF = [
+  { id: 'tap1', name: 'Усиленный излучатель', desc: 'Клик по реактору приносит x2 кредитов', cost: 150, multTap: 2 },
+  { id: 'solar_up', name: 'Зеркальные коллекторы', desc: 'Солнечные панели работают в 2 раза быстрее', cost: 500, target: 'solar', mult: 2 },
+  { id: 'drill_up', name: 'Алмазные коронки', desc: 'Лазерные буры добывают x2 руды', cost: 2500, target: 'drill', mult: 2 },
+  { id: 'tap2', name: 'Плазменный конденсатор', desc: 'Клик по реактору приносит ещё x3 кредитов', cost: 8000, multTap: 3 },
+  { id: 'dome_up', name: 'Гидропоника 2.0', desc: 'Био-купола приносят x2 дохода', cost: 18000, target: 'dome', mult: 2 },
+  { id: 'lab_up', name: 'ИИ-ускоритель частиц', desc: 'Квантовые лаборатории работают в 2.5 раза быстрее', cost: 95000, target: 'lab', mult: 2.5 },
+  { id: 'port_up', name: 'Гипердвигатели шаттлов', desc: 'Космопорты приносят x2.5 прибыли', cost: 450000, target: 'port', mult: 2.5 }
+];
+
+const RANKS = [
+  { min: 0, title: '1 • Аванпост' },
+  { min: 500, title: '2 • Станция' },
+  { min: 5000, title: '3 • Поселение' },
+  { min: 40000, title: '4 • Город-купол' },
+  { min: 300000, title: '5 • Мегаполис' },
+  { min: 2000000, title: '6 • Столица Марса' }
+];
+
+let state = {
+  money: 0,
+  totalEarned: 0,
+  buildings: { solar: 0, drill: 0, dome: 0, lab: 0, port: 0, gate: 0 },
+  upgrades: {},
+  crystals: 0, // бонус престижа (+15% за каждый кристалл)
+  lastSave: Date.now()
+};
+
+let currentTab = 'buildings';
+let paused = false;
+let overdriveTimer = 0;
+let overdriveCooldown = 0;
+let droneCooldown = 0;
+
+// ВИЗУАЛЬНЫЕ ОБЪЕКТЫ НА СЦЕНЕ
+let stars = Array.from({ length: 45 }, () => ({
+  x: Math.random() * 460,
+  y: Math.random() * 140,
+  r: 0.6 + Math.random() * 1.4,
+  a: 0.3 + Math.random() * 0.7
+}));
+let floatingPopups = [];
+let rovers = [{ x: 40, dir: 1, speed: 0.55 }];
+let shuttle = { active: false, x: -60, y: 45 };
+let meteor = { active: false, x: 0, y: 0, vx: 0, vy: 0, reward: 0 };
+let reactorPulse = 0;
+
+// ЗАГРУЗКА СОХРАНЕНИЯ
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('neon_mars_tycoon_v1');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state = { ...state, ...saved };
+      const now = Date.now();
+      const diffSec = Math.min(7200, Math.floor((now - (state.lastSave || now)) / 1000));
+      const inc = getIncomePerSec();
+      if (diffSec > 10 && inc > 0) {
+        const offlineGain = Math.floor(inc * diffSec * 0.6);
+        state.money += offlineGain;
+        state.totalEarned += offlineGain;
+        document.getElementById('welcomeText').textContent =
+          'Пока тебя не было (' + Math.floor(diffSec / 60) + ' мин), дроны колонии добыли +$' + fmt(offlineGain) + '!';
+      }
+    }
+  } catch (e) {}
+}
+
+function saveGame() {
+  state.lastSave = Date.now();
+  try {
+    localStorage.setItem('neon_mars_tycoon_v1', JSON.stringify(state));
+  } catch (e) {}
+}
+
+function closeWelcome() {
+  AudioFX.buy();
+  document.getElementById('welcomeOverlay').classList.add('hidden');
+}
+
+function togglePause(force) {
+  paused = typeof force === 'boolean' ? force : !paused;
+  document.getElementById('pauseOverlay').classList.toggle('hidden', !paused);
+}
+
+function toggleSound() {
+  AudioFX.enabled = !AudioFX.enabled;
+  document.getElementById('soundBtn').textContent = AudioFX.enabled ? 'Звук: Вкл' : 'Звук: Выкл';
+}
+
+function resetProgress() {
+  localStorage.removeItem('neon_mars_tycoon_v1');
+  location.reload();
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') togglePause();
+});
+document.getElementById('pauseBtn').onclick = () => togglePause();
+
+// РАСЧЁТ ДОХОДА И ЦЕН
+function getPrestigeMult() {
+  return 1 + state.crystals * 0.15;
+}
+
+function getBuildingIncome(b) {
+  const count = state.buildings[b.id] || 0;
+  if (count === 0) return 0;
+  let mult = 1;
+  UPGRADES_DEF.forEach(u => {
+    if (u.target === b.id && state.upgrades[u.id]) mult *= u.mult;
+  });
+  return count * b.baseInc * mult * getPrestigeMult();
+}
+
+function getIncomePerSec() {
+  let total = 0;
+  BUILDINGS_DEF.forEach(b => total += getBuildingIncome(b));
+  if (overdriveTimer > 0) total *= 2;
+  return total;
+}
+
+function getTapPower() {
+  let base = 1 + getIncomePerSec() * 0.08;
+  UPGRADES_DEF.forEach(u => {
+    if (u.multTap && state.upgrades[u.id]) base *= u.multTap;
+  });
+  return Math.max(1, Math.floor(base * getPrestigeMult()));
+}
+
+function getBuildingCost(b) {
+  const count = state.buildings[b.id] || 0;
+  return Math.floor(b.baseCost * Math.pow(1.16, count));
+}
+
+// ПОКУПКИ
+function buyBuilding(id) {
+  const b = BUILDINGS_DEF.find(x => x.id === id);
+  const cost = getBuildingCost(b);
+  if (state.money < cost) return;
+  state.money -= cost;
+  state.buildings[id] = (state.buildings[id] || 0) + 1;
+  AudioFX.buy();
+  if (id === 'drill' && rovers.length < 3) {
+    rovers.push({ x: 80 + rovers.length * 110, dir: -1, speed: 0.7 });
+  }
+  renderList();
+  updateHUD();
+}
+
+function buyUpgrade(id) {
+  const u = UPGRADES_DEF.find(x => x.id === id);
+  if (!u || state.upgrades[id] || state.money < u.cost) return;
+  state.money -= u.cost;
+  state.upgrades[id] = true;
+  AudioFX.buy();
+  renderList();
+  updateHUD();
+}
+
+function doPrestige() {
+  const gainCrystals = Math.floor(Math.sqrt(state.totalEarned / 25000));
+  if (gainCrystals <= 0) return;
+  state.crystals += gainCrystals;
+  state.money = 0;
+  state.totalEarned = 0;
+  state.buildings = { solar: 0, drill: 0, dome: 0, lab: 0, port: 0, gate: 0 };
+  state.upgrades = {};
+  AudioFX.boost();
+  saveGame();
+  renderList();
+  updateHUD();
+}
+
+// БУСТЕРЫ
+function activateOverdrive() {
+  if (overdriveCooldown > 0 || overdriveTimer > 0) return;
+  overdriveTimer = 20;
+  overdriveCooldown = 55;
+  AudioFX.boost();
+  floatingPopups.push({ x: 230, y: 110, text: 'ФОРСАЖ x2 НА 20 СЕК!', color: '#ff2e93', life: 1.2 });
+}
+
+function launchDrone() {
+  if (droneCooldown > 0) return;
+  droneCooldown = 35;
+  shuttle.active = true;
+  shuttle.x = -50;
+  const bonus = Math.max(25, Math.floor(getIncomePerSec() * 12 + getTapPower() * 8));
+  state.money += bonus;
+  state.totalEarned += bonus;
+  AudioFX.meteor();
+  floatingPopups.push({ x: 230, y: 75, text: 'ГРУЗ ДОСТАВЛЕН +$' + fmt(bonus), color: '#2ef2a6', life: 1.3 });
+  updateHUD();
+}
+
+// ВКЛАДКИ И ОТРИСОВКА СПИСКА
+function switchTab(tab, btn) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const wrap = document.getElementById('listWrap');
+  wrap.innerHTML = '';
+
+  if (currentTab === 'buildings') {
+    BUILDINGS_DEF.forEach(b => {
+      const count = state.buildings[b.id] || 0;
+      const cost = getBuildingCost(b);
+      const inc = getBuildingIncome(b);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-info">
+          <div class="card-icon" style="background:${b.color}">${b.tag}</div>
+          <div>
+            <div class="card-title">${b.name} <span style="color:var(--cyan)">(${count})</span></div>
+            <div class="card-sub">${b.desc}</div>
+            <div class="card-stat">Доход: +$${fmt(inc)} / сек</div>
+          </div>
+        </div>
+        <button class="buy-btn" data-buy-b="${b.id}" ${state.money < cost ? 'disabled' : ''} onclick="buyBuilding('${b.id}')">
+          $${fmt(cost)}
+        </button>
+      `;
+      wrap.appendChild(card);
+    });
+  } else if (currentTab === 'upgrades') {
+    UPGRADES_DEF.forEach(u => {
+      const bought = !!state.upgrades[u.id];
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-info">
+          <div class="card-icon" style="background:${bought ? '#2ef2a6' : '#ffd166'}">UP</div>
+          <div>
+            <div class="card-title">${u.name}</div>
+            <div class="card-sub">${u.desc}</div>
+          </div>
+        </div>
+        <button class="buy-btn gold" data-buy-u="${u.id}" ${bought || state.money < u.cost ? 'disabled' : ''} onclick="buyUpgrade('${u.id}')">
+          ${bought ? 'ИЗУЧЕНО' : '$' + fmt(u.cost)}
+        </button>
+      `;
+      wrap.appendChild(card);
+    });
+  } else if (currentTab === 'prestige') {
+    const potential = Math.floor(Math.sqrt(state.totalEarned / 25000));
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.flexDirection = 'column';
+    card.style.alignItems = 'stretch';
+    card.innerHTML = `
+      <div style="text-align:left; margin-bottom:10px;">
+        <div class="card-title" style="font-size:16px; color:var(--gold)">Запуск миссии на Титан</div>
+        <div class="card-sub" style="font-size:12px; margin-top:4px;">
+          Отправь накопленный опыт на новую планету, чтобы получить <b>Энергокристаллы</b>. Каждый кристалл навсегда даёт <b>+15%</b> ко всем доходам и кликам!
+        </div>
+        <div class="card-stat" style="font-size:13px; margin-top:8px;">
+          Сейчас у тебя: ${state.crystals} кристаллов (Бонус +${state.crystals * 15}%)
+        </div>
+      </div>
+      <button class="buy-btn gold" style="width:100%; padding:12px;" ${potential <= 0 ? 'disabled' : ''} onclick="doPrestige()">
+        ${potential > 0 ? 'ЗАПУСТИТЬ (+' + potential + ' КРИСТАЛЛОВ)' : 'Накопи $25,000 всего заработка'}
+      </button>
+    `;
+    wrap.appendChild(card);
+  }
+}
+
+function updateHUD() {
+  document.getElementById('moneyVal').textContent = '$' + fmt(state.money);
+  document.getElementById('incomeVal').textContent = '+$' + fmt(getIncomePerSec()) + ' / сек';
+
+  let rankTitle = RANKS[0].title;
+  for (const r of RANKS) {
+    if (state.totalEarned >= r.min) rankTitle = r.title;
+  }
+  document.getElementById('rankVal').textContent = rankTitle;
+
+  const odBtn = document.getElementById('overdriveBtn');
+  if (overdriveTimer > 0) {
+    odBtn.textContent = '[2X] Активен: ' + Math.ceil(overdriveTimer) + 'с';
+    odBtn.classList.add('active');
+    odBtn.disabled = true;
+  } else if (overdriveCooldown > 0) {
+    odBtn.textContent = '[2X] Зарядка: ' + Math.ceil(overdriveCooldown) + 'с';
+    odBtn.classList.remove('active');
+    odBtn.disabled = true;
+  } else {
+    odBtn.textContent = '[2X] Форсаж реактора';
+    odBtn.classList.remove('active');
+    odBtn.disabled = false;
+  }
+
+  const drBtn = document.getElementById('droneBtn');
+  if (droneCooldown > 0) {
+    drBtn.textContent = '[+] Шаттл: ' + Math.ceil(droneCooldown) + 'с';
+    drBtn.disabled = true;
+  } else {
+    drBtn.textContent = '[+] Вызов грузовика';
+    drBtn.disabled = false;
+  }
+
+  // Обновляем доступность кнопок без пересоздания DOM
+  if (currentTab === 'buildings') {
+    BUILDINGS_DEF.forEach(b => {
+      const btn = document.querySelector(`[data-buy-b="${b.id}"]`);
+      if (btn) btn.disabled = state.money < getBuildingCost(b);
+    });
+  } else if (currentTab === 'upgrades') {
+    UPGRADES_DEF.forEach(u => {
+      const btn = document.querySelector(`[data-buy-u="${u.id}"]`);
+      if (btn) btn.disabled = !!state.upgrades[u.id] || state.money < u.cost;
+    });
+  }
+}
+
+// ВЗАИМОДЕЙСТВИЕ СО СЦЕНОЙ (ТАП ПО РЕАКТОРУ И МЕТЕОРИТУ)
+const canvas = document.getElementById('baseCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (paused) return;
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (e.clientX - rect.left) * scaleX;
+  const y = (e.clientY - rect.top) * scaleY;
+
+  // Проверка попадания в падающий метеорит
+  if (meteor.active && Math.hypot(x - meteor.x, y - meteor.y) < 34) {
+    meteor.active = false;
+    state.money += meteor.reward;
+    state.totalEarned += meteor.reward;
+    AudioFX.meteor();
+    floatingPopups.push({ x: meteor.x, y: meteor.y, text: 'МЕТЕОРИТ +$' + fmt(meteor.reward), color: '#ffd166', life: 1.3 });
+    updateHUD();
+    return;
+  }
+
+  // Клик по реактору / базе
+  const gain = getTapPower();
+  state.money += gain;
+  state.totalEarned += gain;
+  reactorPulse = 1;
+  AudioFX.tap();
+  floatingPopups.push({ x, y: y - 10, text: '+$' + fmt(gain), color: '#00f0ff', life: 0.9 });
+  updateHUD();
+});
+
+// ИГРОВОЙ ЦИКЛ И РЕНДЕР СЦЕНЫ
+let lastTime = performance.now();
+let saveAccum = 0;
+
+function gameLoop(now) {
+  const dt = Math.min(0.1, (now - lastTime) / 1000);
+  lastTime = now;
+
+  if (!paused) {
+    const inc = getIncomePerSec();
+    if (inc > 0) {
+      state.money += inc * dt;
+      state.totalEarned += inc * dt;
+    }
+
+    if (overdriveTimer > 0) overdriveTimer = Math.max(0, overdriveTimer - dt);
+    if (overdriveCooldown > 0) overdriveCooldown = Math.max(0, overdriveCooldown - dt);
+    if (droneCooldown > 0) droneCooldown = Math.max(0, droneCooldown - dt);
+
+    // Спавн редкого бонусного метеорита
+    if (!meteor.active && Math.random() < 0.0045) {
+      meteor.active = true;
+      meteor.x = 30 + Math.random() * 400;
+      meteor.y = -15;
+      meteor.vx = (Math.random() - 0.5) * 45;
+      meteor.vy = 32 + Math.random() * 18;
+      meteor.reward = Math.max(30, Math.floor(getIncomePerSec() * 8 + getTapPower() * 10));
+    }
+
+    if (meteor.active) {
+      meteor.x += meteor.vx * dt;
+      meteor.y += meteor.vy * dt;
+      if (meteor.y > 195) meteor.active = false;
+    }
+
+    if (shuttle.active) {
+      shuttle.x += 190 * dt;
+      if (shuttle.x > 520) shuttle.active = false;
+    }
+
+    rovers.forEach(rv => {
+      rv.x += rv.dir * rv.speed;
+      if (rv.x > 410) rv.dir = -1;
+      if (rv.x < 35) rv.dir = 1;
+    });
+
+    if (reactorPulse > 0) reactorPulse = Math.max(0, reactorPulse - dt * 4);
+
+    saveAccum += dt;
+    if (saveAccum >= 5) {
+      saveAccum = 0;
+      saveGame();
+    }
+    updateHUD();
+  }
+
+  drawScene();
+  requestAnimationFrame(gameLoop);
+}
+
+function drawScene() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Космическое небо
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#070a17');
+  sky.addColorStop(0.65, '#191438');
+  sky.addColorStop(1, '#3b1832');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // Звёзды
+  stars.forEach(s => {
+    ctx.fillStyle = `rgba(255,255,255,${s.a})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Далёкая планета с кольцом
+  ctx.fillStyle = 'rgba(255, 110, 140, 0.22)';
+  ctx.beginPath();
+  ctx.arc(385, 48, 24, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(385, 48, 38, 8, -0.25, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Поверхность Марса
+  ctx.fillStyle = '#2a1226';
+  ctx.beginPath();
+  ctx.moveTo(0, 165);
+  ctx.quadraticCurveTo(130, 145, 240, 162);
+  ctx.quadraticCurveTo(360, 178, W, 155);
+  ctx.lineTo(W, H);
+  ctx.lineTo(0, H);
+  ctx.fill();
+
+  // ПОСТРОЕННЫЕ МОДУЛИ БАЗЫ
+  // Солнечные панели слева
+  if (state.buildings.solar > 0) {
+    const panels = Math.min(4, state.buildings.solar);
+    for (let i = 0; i < panels; i++) {
+      const px = 28 + i * 24;
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillRect(px, 144, 16, 10);
+      ctx.fillStyle = '#8899bb';
+      ctx.fillRect(px + 6, 154, 4, 10);
+    }
+  }
+
+  // Био-купол справа
+  if (state.buildings.dome > 0) {
+    ctx.fillStyle = 'rgba(46, 242, 166, 0.25)';
+    ctx.strokeStyle = '#2ef2a6';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(345, 162, 26, Math.PI, 0);
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Космопорт / башня
+  if (state.buildings.port > 0) {
+    ctx.fillStyle = '#ffd166';
+    ctx.fillRect(410, 118, 14, 45);
+    ctx.fillStyle = '#ff2e93';
+    ctx.beginPath();
+    ctx.arc(417, 114, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // ГЛАВНЫЙ ЦЕНТРАЛЬНЫЙ РЕАКТОР (ДЛЯ ТАПА)
+  const rx = 230, ry = 128;
+  const rScale = 1 + reactorPulse * 0.14;
+  ctx.save();
+  ctx.translate(rx, ry);
+  ctx.scale(rScale, rScale);
+
+  // Опора реактора
+  ctx.fillStyle = '#1b264f';
+  ctx.fillRect(-34, 16, 68, 22);
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-34, 16, 68, 22);
+
+  // Светящееся ядро
+  const glow = ctx.createRadialGradient(0, 0, 4, 0, 0, 32);
+  glow.addColorStop(0, '#ffffff');
+  glow.addColorStop(0.45, overdriveTimer > 0 ? '#ff2e93' : '#00f0ff');
+  glow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 32, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = '900 11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('ЖМИ', 0, 4);
+  ctx.restore();
+
+  // Роверы на поверхности
+  rovers.forEach(rv => {
+    ctx.fillStyle = '#ff2e93';
+    ctx.fillRect(rv.x - 10, 164, 20, 8);
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillRect(rv.x - 6, 159, 10, 5);
+  });
+
+  // Грузовой шаттл
+  if (shuttle.active) {
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.moveTo(shuttle.x + 28, shuttle.y);
+    ctx.lineTo(shuttle.x - 14, shuttle.y - 10);
+    ctx.lineTo(shuttle.x - 8, shuttle.y);
+    ctx.lineTo(shuttle.x - 14, shuttle.y + 10);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Бонусный метеорит
+  if (meteor.active) {
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.arc(meteor.x, meteor.y, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ff2e93';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#07101f';
+    ctx.font = '900 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('$$', meteor.x, meteor.y + 3);
+  }
+
+  // Всплывающие цифры
+  for (let i = floatingPopups.length - 1; i >= 0; i--) {
+    const p = floatingPopups[i];
+    p.y -= 0.9;
+    p.life -= 0.022;
+    if (p.life <= 0) {
+      floatingPopups.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, p.life);
+    ctx.font = '900 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 6;
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.restore();
+  }
+}
+
+loadGame();
+renderList();
+updateHUD();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
